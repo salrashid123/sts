@@ -1,35 +1,40 @@
-##  Security Token Exchange Server (STS) Credentials for HTTP and gRPC (rfc8693)
+package main
 
-
-This library provides `HTTP` and `gRPC` credentials where the final `access_token` is acquired through [STS OAuth 2.0 Token Exchange:  rfc8693](https://www.rfc-editor.org/rfc/rfc8693) 
-
-
-You can use this library for use in any `net/http` Client for REST calls or gRPC RPC `RPCCredentials` where you exchange an intermediate credential with an STS server for a final `access_token`.   The final token is then used to access the resource server
-
-
-see `examples/` folder
-
-
-![images/sts.png](images/sts.png)
-
----
-
-##### References
-
-* [Serverless Security Token Exchange Server(STS)](https://github.com/salrashid123/sts_server)
-* [Certificate Bound Tokens using Security Token Exchange Server (STS)](https://github.com/salrashid123/cert_bound_sts_server)
-
-
----
-
-### HTTP
-
-
-```golang
 import (
+	"context"
+	"crypto/tls"
+	"flag"
+	"io/ioutil"
+	"log"
+	"net/http"
+	"time"
+
+	stsgrpc "github.com/salrashid123/sts/grpc"
 	stshttp "github.com/salrashid123/sts/http"
+
+	pb "github.com/salrashid123/sts_server/echo"
+
+	"golang.org/x/oauth2"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
+var (
+	httpAddress = flag.String("httpAddress", "https://httpbin.org/get", "host:port of http server")
+
+	stsaddress  = flag.String("stsaddress", "https://stsserver-6w42z6vi3q-uc.a.run.app/token", "STS Server address")
+	stsaudience = flag.String("stsaudience", "stsserver-6w42z6vi3q-uc.a.run.app", "the audience and resource value to send to STS server")
+	scope       = flag.String("scope", "https://www.googleapis.com/auth/cloud-platform", "scope to send to STS server")
+
+	grpcAddress = flag.String("grpcAddress", "grpcserver-6w42z6vi3q-uc.a.run.app:443", "host:port of gRPC server")
+)
+
+const (
+	secret = "iamtheeggman"
+)
+
+func main() {
+	flag.Parse()
 
 	rootTS := oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: secret,
@@ -52,42 +57,30 @@ import (
 	)
 
 	tok, err := stsTokenSource.Token()
+	if err != nil {
+		log.Fatal(err)
+	}
 	log.Printf("New Token: %s", tok.AccessToken)
 
 	client := oauth2.NewClient(context.TODO(), stsTokenSource)
 	resp, err := client.Get(*httpAddress)
-```
+	if err != nil {
+		log.Printf("Error creating client %v", err)
+		return
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		log.Printf("Error connecting to server %v", http.StatusText(resp.StatusCode))
+		return
+	}
+	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+	bodyString := string(bodyBytes)
+	log.Printf("%s", bodyString)
 
----
-
-### gRPC
-
-Note that upstream [google.golang.org/grpc/credentials/sts](https://pkg.go.dev/google.golang.org/grpc/credentials/sts) provides the same credential object except that this variation allows for
-
-
-* arbitrary HTTPClients  [issue #5611](https://github.com/grpc/grpc-go/pull/5611)
-
-* allowing source tokens from arbitrary `oauth2.TokenSource`:
-
-```golang
-	// token source for the subject token
-	SubjectTokenSource *oauth2.TokenSource
-```    
-
-
-Example usage:
-
-```golang
-import (
-	stsgrpc "github.com/salrashid123/sts/grpc"
-)
-
-
-	rootTS := oauth2.StaticTokenSource(&oauth2.Token{
-		AccessToken: secret,
-		TokenType:   "Bearer",
-		Expiry:      time.Now().Add(time.Duration(time.Second * 60)),
-	})
+	// gRPC
 
 	ce := credentials.NewTLS(&tls.Config{})
 
@@ -102,16 +95,27 @@ import (
 		RequestedTokenType:      "urn:ietf:params:oauth:token-type:access_token",
 		HTTPClient:              http.DefaultClient,
 	})
+	if err != nil {
+		log.Fatalf("unable to create TokenSource: %v\n", err)
+	}
 
 	ctx := context.Background()
 
 	conn, err := grpc.Dial(*grpcAddress,
 		grpc.WithTransportCredentials(ce),
 		grpc.WithPerRPCCredentials(stscreds))
+	if err != nil {
+		log.Fatalf("did not connect: %v", err)
+	}
 
 	defer conn.Close()
 	c := pb.NewEchoServerClient(conn)
 
 	r, err := c.SayHello(ctx, &pb.EchoRequest{Name: "unary RPC msg "})
+	if err != nil {
+		log.Fatalf("could not greet: %v", err)
+	}
 
-```
+	log.Printf("RPC Response: %s", r)
+
+}
