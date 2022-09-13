@@ -1,4 +1,4 @@
-##  Security Token Exchange Server (STS) Credentials for HTTP and gRPC (rfc8693)
+##  Security Token Service (STS) Credentials for HTTP and gRPC (rfc8693)
 
 
 This library provides `HTTP` and `gRPC` credentials where the final `access_token` is acquired through [STS OAuth 2.0 Token Exchange:  rfc8693](https://www.rfc-editor.org/rfc/rfc8693) 
