@@ -135,7 +135,7 @@ func NewCredentials(opts Options) (credentials.PerRPCCredentials, error) {
 	}
 	return &callCreds{
 		opts:   opts,
-		client: makeHTTPDoer(client),
+		client: client,
 	}, nil
 }
 
@@ -143,7 +143,7 @@ func NewCredentials(opts Options) (credentials.PerRPCCredentials, error) {
 // token exchange.
 type callCreds struct {
 	opts   Options
-	client httpDoer
+	client *http.Client
 
 	// Cached accessToken to avoid an STS token exchange for every call to
 	// GetRequestMetadata.
