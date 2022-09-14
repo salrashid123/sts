@@ -4,7 +4,7 @@
 This library provides `HTTP` and `gRPC` credentials where the final `access_token` is acquired through [STS OAuth 2.0 Token Exchange:  rfc8693](https://www.rfc-editor.org/rfc/rfc8693) 
 
 
-You can use this library to setup sts credentials for use with either `net/http` Client or  gRPC RPC `RPCCredentials` where you exchange an intermediate credential with an STS server for a final `access_token`.   The final token is then used to access the resource server
+You can use this library to setup sts credentials for use with either `net/http` Client or  gRPC `RPCCredentials` where you exchange an intermediate credential with an STS server for a final `access_token`.   The final token is then used to access the resource server
 
 
 see `examples/` folder
