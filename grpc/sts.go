@@ -56,9 +56,7 @@ const (
 	defaultCloudPlatformScope = "https://www.googleapis.com/auth/cloud-platform"
 )
 
-// For overriding in tests.
 var (
-	makeHTTPDoer         = makeHTTPClient
 	readSubjectTokenFrom = ioutil.ReadFile
 	readActorTokenFrom   = ioutil.ReadFile
 	logger               = grpclog.Component("credentials")
@@ -173,7 +171,7 @@ func (c *callCreds) GetRequestMetadata(ctx context.Context, _ ...string) (map[st
 	if err != nil {
 		return nil, err
 	}
-	respBody, err := sendRequest(c.client, req)
+	respBody, err := sendRequest(*c.client, req)
 	if err != nil {
 		return nil, err
 	}
@@ -190,16 +188,6 @@ func (c *callCreds) GetRequestMetadata(ctx context.Context, _ ...string) (map[st
 // transport security.
 func (c *callCreds) RequireTransportSecurity() bool {
 	return true
-}
-
-// httpDoer wraps the single method on the http.Client type that we use. This
-// helps with overriding in unittests.
-type httpDoer interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-func makeHTTPClient(client *http.Client) httpDoer {
-	return client
 }
 
 // validateOptions performs the following validation checks on opts:
@@ -307,7 +295,7 @@ func constructRequest(ctx context.Context, opts Options) (*http.Request, error) 
 	return req, nil
 }
 
-func sendRequest(client httpDoer, req *http.Request) ([]byte, error) {
+func sendRequest(client http.Client, req *http.Request) ([]byte, error) {
 	// http.Client returns a non-nil error only if it encounters an error
 	// caused by client policy (such as CheckRedirect), or failure to speak
 	// HTTP (such as a network connectivity problem). A non-2xx status code
