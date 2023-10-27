@@ -22,11 +22,11 @@ import (
 var (
 	httpAddress = flag.String("httpAddress", "https://httpbin.org/get", "host:port of http server")
 
-	stsaddress  = flag.String("stsaddress", "https://stsserver-6w42z6vi3q-uc.a.run.app/token", "STS Server address")
-	stsaudience = flag.String("stsaudience", "stsserver-6w42z6vi3q-uc.a.run.app", "the audience and resource value to send to STS server")
+	stsaddress  = flag.String("stsaddress", "https://stsserver-3kdezruzua-uc.a.run.app/token", "STS Server address")
+	stsaudience = flag.String("stsaudience", "stsserver-3kdezruzua-uc.a.run.app", "the audience and resource value to send to STS server")
 	scope       = flag.String("scope", "https://www.googleapis.com/auth/cloud-platform", "scope to send to STS server")
 
-	grpcAddress = flag.String("grpcAddress", "grpcserver-6w42z6vi3q-uc.a.run.app:443", "host:port of gRPC server")
+	grpcAddress = flag.String("grpcAddress", "grpcserver-3kdezruzua-uc.a.run.app:443", "host:port of gRPC server")
 )
 
 const (

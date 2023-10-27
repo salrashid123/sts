@@ -3,9 +3,9 @@ module main
 go 1.19
 
 require (
-	github.com/salrashid123/sts_server/echo v0.0.0
 	github.com/salrashid123/sts/grpc v0.0.0
 	github.com/salrashid123/sts/http v0.0.0
+	github.com/salrashid123/sts_server/echo v0.0.0
 	golang.org/x/oauth2 v0.0.0-20220822191816-0ebed06d0094
 	google.golang.org/grpc v1.49.0
 )

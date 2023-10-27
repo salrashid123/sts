@@ -7,10 +7,59 @@ This library provides `HTTP` and `gRPC` credentials where the final `access_toke
 You can use this library to setup sts credentials for use with either `net/http` Client or  gRPC `RPCCredentials` where you exchange an intermediate credential with an STS server for a final `access_token`.   The final token is then used to access the resource server
 
 
-see `examples/` folder
-
-
 ![images/sts.png](images/sts.png)
+
+
+---
+
+The output uses a live sts and grpc server accessible live:
+
+see `examples/` folder uses a sample trivial implementation from a different repo which i've deployed on cloud run
+
+the STS server accepts a bearer token `iammtheeggman` and responds back with a new token `iamthewalrus`
+ 
+see [Serverless Security Token Exchange Server(STS) and gRPC STS credentials](https://github.com/salrashid123/sts_server/blob/main/sts_server/sts_server.go#L44)
+
+```golang
+const (
+	inboundPassphrase  = "iamtheeggman"
+	outboundPassphrase = "iamthewalrus"
+)
+```
+
+```log
+$ go run main.go 
+2023/10/27 12:00:27 New Token: iamthewalrus
+2023/10/27 12:00:27 {
+  "args": {}, 
+  "headers": {
+    "Accept-Encoding": "gzip", 
+    "Authorization": "Bearer iamthewalrus", 
+    "Host": "httpbin.org", 
+    "User-Agent": "Go-http-client/2.0", 
+    "X-Amzn-Trace-Id": "Root=1-653bde9b-7b86e72a6e1006f802a9bc80"
+  }, 
+  "origin": "108.51.25.168", 
+  "url": "https://httpbin.org/get"
+}
+2023/10/27 12:00:28 RPC Response: message:"Hello unary RPC msg   from K_REVISION grpcserver-00006-vsr"
+```
+
+##### `http`:
+
+the first output shows the echo response back from httpbin:
+
+`client-->stsserver`  --> `sts server responds back with a token` --> `client sends new token to httpbin`
+
+the output from httpbin's echo shows the bearer token it recieved (whcih is `iamthewalrus`)
+
+##### `grpc`
+
+the second output shows the grpc response from a server on cloud run
+
+`client-->stsserver`  --> `sts server responds back with a token` --> `client sends new token to a grpc server which echo's back some data`
+
+the GRPC server implenentation here only accepts a bearer token of `"iamthewalrus"` (which is what the sts server respond back with )
 
 ---
 
