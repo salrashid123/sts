@@ -12,11 +12,11 @@ You can use this library to setup sts credentials for use with either `net/http`
 
 ---
 
-The output uses a live sts and grpc server accessible live:
+#### Examples
 
-see `examples/` folder uses a sample trivial implementation from a different repo which i've deployed on cloud run
+see `examples/` folder which is a sample trivial implementation from a different repo which i've deployed on cloud run.
 
-the STS server accepts a bearer token `iammtheeggman` and responds back with a new token `iamthewalrus`
+the STS server accepts a bearer token `iammtheeggman` and responds back with a new token `iamthewalrus` where where the client uses the library described in this repo (ie., this repo is the client; the repo immediately below is a server)
  
 see [Serverless Security Token Exchange Server(STS) and gRPC STS credentials](https://github.com/salrashid123/sts_server/blob/main/sts_server/sts_server.go#L44)
 
