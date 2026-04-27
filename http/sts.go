@@ -7,7 +7,7 @@ package sts
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"sync"
@@ -100,17 +100,17 @@ func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
 	form.Add("requested_token_type", ts.requestedTokenType)
 	form.Add("scope", ts.scope)
 	form.Add("subject_token", sourceTok.AccessToken)
-	// fmt.Println(string(e))
 
 	client := ts.httpClient
 
 	gcpSTSResp, err := client.PostForm(ts.tokenExchangeServiceURI, form)
-	defer gcpSTSResp.Body.Close()
 	if err != nil {
 		return &oauth2.Token{}, fmt.Errorf("Error exchaning token for GCP STS %v", err)
 	}
+	defer gcpSTSResp.Body.Close()
+
 	if gcpSTSResp.StatusCode != http.StatusOK {
-		bodyBytes, err := ioutil.ReadAll(gcpSTSResp.Body)
+		bodyBytes, err := io.ReadAll(gcpSTSResp.Body)
 		return &oauth2.Token{}, fmt.Errorf("Unable to exchange token %s,  %v", string(bodyBytes), err)
 	}
 	tresp := &rTSTokenResponse{}
@@ -119,15 +119,10 @@ func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
 		return &oauth2.Token{}, fmt.Errorf("Error Decoding GCP STS TokenResponse %v", err)
 	}
 
-	ts.stsToken = &oauth2.Token{
-		AccessToken: tresp.AccessToken,
-		Expiry:      time.Now().Add(time.Duration(tresp.ExpiresIn)),
-	}
-
 	return &oauth2.Token{
-		AccessToken: ts.stsToken.AccessToken,
+		AccessToken: tresp.AccessToken,
 		TokenType:   "Bearer",
-		Expiry:      ts.stsToken.Expiry,
+		Expiry:      time.Now().Add(time.Duration(tresp.ExpiresIn) * time.Second),
 	}, nil
 
 }

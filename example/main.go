@@ -4,7 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"flag"
-	"io/ioutil"
+	"io"
+
 	"log"
 	"net/http"
 	"time"
@@ -73,7 +74,7 @@ func main() {
 		log.Printf("Error connecting to server %v", http.StatusText(resp.StatusCode))
 		return
 	}
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
+	bodyBytes, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -101,7 +102,7 @@ func main() {
 
 	ctx := context.Background()
 
-	conn, err := grpc.Dial(*grpcAddress,
+	conn, err := grpc.NewClient(*grpcAddress,
 		grpc.WithTransportCredentials(ce),
 		grpc.WithPerRPCCredentials(stscreds))
 	if err != nil {
