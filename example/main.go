@@ -54,6 +54,7 @@ func main() {
 			SubjectTokenType:        "urn:ietf:params:oauth:token-type:access_token",
 			RequestedTokenType:      "urn:ietf:params:oauth:token-type:access_token",
 			HTTPClient:              http.DefaultClient,
+			PostJSON:                false,
 		},
 	)
 

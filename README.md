@@ -97,6 +97,7 @@ import (
 			SubjectTokenType:        "urn:ietf:params:oauth:token-type:access_token",
 			RequestedTokenType:      "urn:ietf:params:oauth:token-type:access_token",
 			HTTPClient:              http.DefaultClient,
+			PostJSON:                false,
 		},
 	)
 
@@ -106,6 +107,8 @@ import (
 	client := oauth2.NewClient(context.TODO(), stsTokenSource)
 	resp, err := client.Get(*httpAddress)
 ```
+
+Note `PostJSON` parameter denotes if the STS API call uses form post or json (set true for json)
 
 ---
 

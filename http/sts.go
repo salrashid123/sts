@@ -5,6 +5,7 @@
 package sts
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -35,6 +36,7 @@ type STSTokenConfig struct {
 	SubjectTokenType        string
 	RequestedTokenType      string
 	HTTPClient              *http.Client
+	PostJSON                bool // set true if the sts request will json or just form
 }
 
 const ()
@@ -63,6 +65,7 @@ func STSTokenSource(tokenConfig *STSTokenConfig) (oauth2.TokenSource, error) {
 		subjectTokenType:   tokenConfig.SubjectTokenType,
 		requestedTokenType: tokenConfig.RequestedTokenType,
 		httpClient:         tokenConfig.HTTPClient,
+		postJSON:           tokenConfig.PostJSON,
 	}, nil
 }
 
@@ -77,6 +80,7 @@ type stsTokenSource struct {
 	subjectTokenType   string
 	requestedTokenType string
 	httpClient         *http.Client
+	postJSON           bool
 }
 
 func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
@@ -92,23 +96,44 @@ func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
 	if err != nil {
 		return &oauth2.Token{}, err
 	}
+	var gcpSTSResp *http.Response
 
-	form := url.Values{}
-	form.Add("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
-	form.Add("audience", ts.audience)
-	form.Add("subject_token_type", ts.subjectTokenType)
-	form.Add("requested_token_type", ts.requestedTokenType)
-	form.Add("scope", ts.scope)
-	form.Add("subject_token", sourceTok.AccessToken)
+	if ts.postJSON {
 
-	client := ts.httpClient
+		postData := map[string]string{
+			"grant_type":           "urn:ietf:params:oauth:grant-type:token-exchange",
+			"audience":             ts.audience,
+			"subject_token_type":   ts.subjectTokenType,
+			"requested_token_type": ts.requestedTokenType,
+			"scope":                ts.scope,
+			"subject_token":        sourceTok.AccessToken}
+		jsonData, err := json.Marshal(postData)
+		if err != nil {
+			return &oauth2.Token{}, fmt.Errorf("Error marshalling json STS %v", err)
+		}
+		gcpSTSResp, err = http.Post(ts.tokenExchangeServiceURI, "application/json", bytes.NewBuffer(jsonData))
+		if err != nil {
+			return &oauth2.Token{}, fmt.Errorf("Error exchaning token for GCP STS  %v", err)
+		}
+		defer gcpSTSResp.Body.Close()
 
-	gcpSTSResp, err := client.PostForm(ts.tokenExchangeServiceURI, form)
-	if err != nil {
-		return &oauth2.Token{}, fmt.Errorf("Error exchaning token for GCP STS %v", err)
+	} else {
+		form := url.Values{}
+		form.Add("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+		form.Add("audience", ts.audience)
+		form.Add("subject_token_type", ts.subjectTokenType)
+		form.Add("requested_token_type", ts.requestedTokenType)
+		form.Add("scope", ts.scope)
+		form.Add("subject_token", sourceTok.AccessToken)
+
+		client := ts.httpClient
+
+		gcpSTSResp, err = client.PostForm(ts.tokenExchangeServiceURI, form)
+		if err != nil {
+			return &oauth2.Token{}, fmt.Errorf("Error exchaning token for GCP STS %v", err)
+		}
+		defer gcpSTSResp.Body.Close()
 	}
-	defer gcpSTSResp.Body.Close()
-
 	if gcpSTSResp.StatusCode != http.StatusOK {
 		bodyBytes, err := io.ReadAll(gcpSTSResp.Body)
 		return &oauth2.Token{}, fmt.Errorf("Unable to exchange token %s,  %v", string(bodyBytes), err)
