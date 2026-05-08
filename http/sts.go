@@ -41,8 +41,7 @@ type STSTokenConfig struct {
 }
 
 const (
-	GrantTypeTokenExchange = "urn:ietf:params:oauth:grant-type:token-exchange"
-	TypeTypeTokenExchange  = "urn:ietf:params:oauth:token-type:token-exchange"
+	grantTypeTokenExchange = "urn:ietf:params:oauth:grant-type:token-exchange"
 )
 
 /*
@@ -57,10 +56,6 @@ func STSTokenSource(tokenConfig *STSTokenConfig) (oauth2.TokenSource, error) {
 		return nil, fmt.Errorf("oauth2/google: Command cannot be nil")
 	}
 
-	if tokenConfig.GrantType == "" {
-		tokenConfig.GrantType = GrantTypeTokenExchange
-	}
-
 	return &stsTokenSource{
 		refreshMutex:            &sync.Mutex{},
 		stsToken:                nil,
@@ -69,7 +64,6 @@ func STSTokenSource(tokenConfig *STSTokenConfig) (oauth2.TokenSource, error) {
 
 		scope:              tokenConfig.Scope,
 		subjectTokenSource: tokenConfig.SubjectTokenSource,
-		grantType:          tokenConfig.GrantType,
 
 		subjectTokenType:   tokenConfig.SubjectTokenType,
 		requestedTokenType: tokenConfig.RequestedTokenType,
@@ -88,7 +82,6 @@ type stsTokenSource struct {
 	subjectTokenSource oauth2.TokenSource
 	subjectTokenType   string
 	requestedTokenType string
-	grantType          string
 	httpClient         *http.Client
 	postJSON           bool
 }
@@ -111,7 +104,7 @@ func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
 	if ts.postJSON {
 
 		postData := map[string]string{
-			"grant_type":           ts.grantType,
+			"grant_type":           grantTypeTokenExchange,
 			"audience":             ts.audience,
 			"subject_token_type":   ts.subjectTokenType,
 			"requested_token_type": ts.requestedTokenType,
@@ -129,7 +122,7 @@ func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
 
 	} else {
 		form := url.Values{}
-		form.Add("grant_type", ts.grantType)
+		form.Add("grant_type", grantTypeTokenExchange)
 		form.Add("audience", ts.audience)
 		form.Add("subject_token_type", ts.subjectTokenType)
 		form.Add("requested_token_type", ts.requestedTokenType)
