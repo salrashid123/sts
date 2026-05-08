@@ -36,10 +36,14 @@ type STSTokenConfig struct {
 	SubjectTokenType        string
 	RequestedTokenType      string
 	HTTPClient              *http.Client
+	GrantType               string
 	PostJSON                bool // set true if the sts request will json or just form
 }
 
-const ()
+const (
+	GrantTypeTokenExchange = "urn:ietf:params:oauth:grant-type:token-exchange"
+	TypeTypeTokenExchange  = "urn:ietf:params:oauth:token-type:token-exchange"
+)
 
 /*
 STSTokenSource basically exchanges an arbitrary token (which maybe anything, any token, not necessarily google)
@@ -53,6 +57,10 @@ func STSTokenSource(tokenConfig *STSTokenConfig) (oauth2.TokenSource, error) {
 		return nil, fmt.Errorf("oauth2/google: Command cannot be nil")
 	}
 
+	if tokenConfig.GrantType == "" {
+		tokenConfig.GrantType = GrantTypeTokenExchange
+	}
+
 	return &stsTokenSource{
 		refreshMutex:            &sync.Mutex{},
 		stsToken:                nil,
@@ -61,6 +69,7 @@ func STSTokenSource(tokenConfig *STSTokenConfig) (oauth2.TokenSource, error) {
 
 		scope:              tokenConfig.Scope,
 		subjectTokenSource: tokenConfig.SubjectTokenSource,
+		grantType:          tokenConfig.GrantType,
 
 		subjectTokenType:   tokenConfig.SubjectTokenType,
 		requestedTokenType: tokenConfig.RequestedTokenType,
@@ -79,6 +88,7 @@ type stsTokenSource struct {
 	subjectTokenSource oauth2.TokenSource
 	subjectTokenType   string
 	requestedTokenType string
+	grantType          string
 	httpClient         *http.Client
 	postJSON           bool
 }
@@ -101,7 +111,7 @@ func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
 	if ts.postJSON {
 
 		postData := map[string]string{
-			"grant_type":           "urn:ietf:params:oauth:token-type:token-exchange",
+			"grant_type":           ts.grantType,
 			"audience":             ts.audience,
 			"subject_token_type":   ts.subjectTokenType,
 			"requested_token_type": ts.requestedTokenType,
@@ -119,7 +129,7 @@ func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
 
 	} else {
 		form := url.Values{}
-		form.Add("grant_type", "urn:ietf:params:oauth:token-type:token-exchange")
+		form.Add("grant_type", ts.grantType)
 		form.Add("audience", ts.audience)
 		form.Add("subject_token_type", ts.subjectTokenType)
 		form.Add("requested_token_type", ts.requestedTokenType)
