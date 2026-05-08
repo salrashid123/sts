@@ -101,7 +101,7 @@ func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
 	if ts.postJSON {
 
 		postData := map[string]string{
-			"grant_type":           "urn:ietf:params:oauth:grant-type:token-exchange",
+			"grant_type":           "urn:ietf:params:oauth:token-type:token-exchange",
 			"audience":             ts.audience,
 			"subject_token_type":   ts.subjectTokenType,
 			"requested_token_type": ts.requestedTokenType,
@@ -119,7 +119,7 @@ func (ts *stsTokenSource) Token() (*oauth2.Token, error) {
 
 	} else {
 		form := url.Values{}
-		form.Add("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+		form.Add("grant_type", "urn:ietf:params:oauth:token-type:token-exchange")
 		form.Add("audience", ts.audience)
 		form.Add("subject_token_type", ts.subjectTokenType)
 		form.Add("requested_token_type", ts.requestedTokenType)
